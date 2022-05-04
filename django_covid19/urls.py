@@ -34,4 +34,5 @@ urlpatterns = [
     url(r'charts/province/daily', charts.GetProvinceDayList),
     url(r'charts/china/cumulate', charts.CumulateInfo),
     url(r'charts/china/confirmed', charts.GetChinaCumulateConfirmed),
+    url(r'charts/address/$', charts.GetYourCountryCovidInfo),
 ]

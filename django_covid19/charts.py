@@ -5,6 +5,7 @@
 from django.db.models import Sum
 from django.http import JsonResponse, HttpResponse
 from django.db import connection
+import requests
 import json
 import datetime
 from . import models
@@ -163,3 +164,21 @@ def GetProvinceDayList(request):
     response = {'confirmedCount': confirmedCount, 'curedCount': curedCount, 'deadCount': deadCount,
                 'province': list(PROVINCE_CODES.keys())}
     return HttpResponse(json.dumps(response), content_type='application/json')
+
+
+def GetYourCountryCovidInfo(request):
+    """
+    根据访问ip信息获取所属国家的疫情信息
+    :param request:
+    :return: json
+    """
+    code = request.GET.get('provinceCode')
+    querySet = models.Province.objects.filter(provinceCode=code)
+    dailyData = {}
+    provinceConfirmed = 0
+    provinceDead = 0
+    for item in querySet.values():
+        dailyData = json.loads(item['dailyData'])[-1]
+        provinceConfirmed = item['confirmedCount']
+        provinceDead = item['deadCount']
+    return HttpResponse(json.dumps({"dailyData":dailyData,"provinceConfirmed":provinceConfirmed,"provinceDead":provinceDead}),content_type='application/json')
