@@ -32,4 +32,6 @@ urlpatterns = [
     url(r'country-codes/(?P<countryCode>[A-Z]+)/$', views.CountryCodeRetrieveView.as_view(), name='country-code-detail'),
 
     url(r'charts/province/daily', charts.GetProvinceDayList),
+    url(r'charts/china/cumulate', charts.CumulateInfo),
+    url(r'charts/china/confirmed', charts.GetChinaCumulateConfirmed),
 ]

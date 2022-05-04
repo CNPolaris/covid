@@ -2,10 +2,13 @@
 # @Time    : 2022/5/4 16:30
 # @FileName: charts.py
 # @Author  : CNPolaris
+from django.db.models import Sum
 from django.http import JsonResponse, HttpResponse
+from django.db import connection
 import json
 import datetime
 from . import models
+
 
 PROVINCE_CODES = {
     "黑龙江": "HLJ",
@@ -81,10 +84,60 @@ PROVINCE_RESPONSE = {
 }
 
 
+def CumulateInfo(request):
+    """
+    昨日全国累计疫情
+    :param request: get
+    :return: Json
+    """
+    confirmedCount = models.Province.objects.filter(countryCode='CHN').aggregate(total=Sum("confirmedCount"))['total']
+    curedCount = models.Province.objects.filter(countryCode='CHN').aggregate(total=Sum("curedCount"))['total']
+    deadCount = models.Province.objects.filter(countryCode='CHN').aggregate(total=Sum("deadCount"))['total']
+    response = {"confirmedCount": confirmedCount, "curedCount": curedCount, "deadCount": deadCount}
+    return HttpResponse(json.dumps(response),content_type='application/json')
+
+
+def GetChinaCumulateConfirmed(request):
+    """
+    获取全国累计确诊疫情趋势
+    :param request:Get
+    :return:Json
+    """
+    confirmed = {}
+    cured = {}
+    dead = {}
+    for key in PROVINCE_RESPONSE.keys():
+        querySet = models.Province.objects.filter(provinceCode=key, countryCode='CHN')
+        for item in querySet.values():
+            dailyData = json.loads(item['dailyData'])
+            if dailyData is not None:
+                dailyData = dailyData[-30:]
+                for date in dailyData:
+                    # 日期
+                    d = datetime.datetime.strptime(str(date['dateId']),'%Y%m%d').date().strftime('%Y-%m-%d')
+                    # 累计确诊
+                    if d in confirmed.keys():
+                        confirmed[d] = confirmed[d] + date['confirmedCount']
+                    else:
+                        confirmed[d] = date['confirmedCount']
+                    # 累计治愈
+                    if d in cured.keys():
+                        cured[d] = cured[d] + date['curedCount']
+                    else:
+                        cured[d] = date['curedCount']
+                    # 累计死亡
+                    if d in dead.keys():
+                        dead[d] = dead[d] + date['deadCount']
+                    else:
+                        dead[d] = date['deadCount']
+
+    return HttpResponse(json.dumps({"date":list(confirmed.keys()),"confirmed":list(confirmed.values()),"cured":list(cured.values()),"dead": list(dead.values())}), content_type='application/json')
+
+
 def GetProvinceDayList(request):
     """统计各省今日新增人数"""
     date = datetime.datetime.now().strftime("%Y%m%d")
-    querySet = models.Province.objects.order_by('provinceCode')
+    querySet = models.Province.objects.filter(countryCode='CHN').order_by('provinceCode')
     result = []
     for item in querySet.values():
         dailyData = json.loads(item['dailyData'])
