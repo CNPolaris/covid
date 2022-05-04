@@ -15,16 +15,18 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-gv9w)+a%di#&vwlrfl$(%yhb5!$h5^4+#vl*kb3@-^%0tgbs=#'
+SECRET_KEY = 'django-insecure-s041zs66@w1-5te-&rx(3oik3%5fhn%@w_6**gvzcg$1^qq5mj'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = []
+
 
 # Application definition
 
@@ -35,13 +37,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'server'
+    'django_crontab',
+    'rest_framework',
+    'django_filters',
+    'django_covid19'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -68,6 +74,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'covid.wsgi.application'
 
+
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
@@ -79,6 +86,17 @@ DATABASES = {
         'PASSWORD': '123',
         'HOST': 'localhost',
         'PORT': '3306',
+    }
+}
+
+CACHES = {
+    'default': {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "TIMEOUT": 3600 * 24,
+        "OPTIONS": {
+            "MAX_ENTRIES": 200000
+        }
     }
 }
 
@@ -100,12 +118,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
-LANGUAGE_CODE = 'zh-hans'
+LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Shanghai'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
@@ -113,11 +132,22 @@ USE_L10N = True
 
 USE_TZ = True
 
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
 
+CRONTAB_LOCK_JOBS = True
+CRONJOBS = (
+    # 每分钟抓取丁香园数据一次
+    ('*/1 * * * *', 'django.core.management.call_command', ['crawl', 'dxy']),
+
+    # 每隔1小时开始抓取 covidtracking 数据一次
+    ('*/60 * * * *', 'django.core.management.call_command', ['crawl', 'covidtracking']),
+)
+# scrapy 日志文件路径
+# SCRAPY_LOG_FILE = '/var/tmp/django-covid19-spider.log'
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
