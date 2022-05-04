@@ -3,7 +3,7 @@ from django.urls import include, path
 
 from rest_framework import routers
 from . import views
-
+from . import charts
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 
@@ -30,4 +30,6 @@ urlpatterns = [
 
     url(r'country-codes/$', views.CountryCodeListView.as_view(), name='country-code-list'),
     url(r'country-codes/(?P<countryCode>[A-Z]+)/$', views.CountryCodeRetrieveView.as_view(), name='country-code-detail'),
+
+    url(r'charts/province/daily', charts.GetProvinceDayList),
 ]
