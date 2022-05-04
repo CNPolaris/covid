@@ -35,4 +35,5 @@ urlpatterns = [
     url(r'charts/china/cumulate', charts.CumulateInfo),
     url(r'charts/china/confirmed', charts.GetChinaCumulateConfirmed),
     url(r'charts/address/$', charts.GetYourCountryCovidInfo),
+    url(r'charts/china/all', charts.GetChinaCountry),
 ]

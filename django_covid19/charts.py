@@ -182,3 +182,19 @@ def GetYourCountryCovidInfo(request):
         provinceConfirmed = item['confirmedCount']
         provinceDead = item['deadCount']
     return HttpResponse(json.dumps({"dailyData":dailyData,"provinceConfirmed":provinceConfirmed,"provinceDead":provinceDead}),content_type='application/json')
+
+
+def GetChinaCountry(request):
+    """
+    中国趋势
+    :param request:
+    :return:
+    """
+    confirmed = {}
+    cured = {}
+    dead = {}
+    session = requests.session()
+    session.trust_env = False
+    re = session.get("https://jz-forecast.oss-cn-beijing.aliyuncs.com/data/by_overall.json")
+    records = json.loads(re.text)[0].get('records')
+    return HttpResponse(json.dumps({"records": records}),content_type="application/json")
