@@ -198,3 +198,49 @@ def GetChinaCountry(request):
     re = session.get("https://jz-forecast.oss-cn-beijing.aliyuncs.com/data/by_overall.json")
     records = json.loads(re.text)[0].get('records')
     return HttpResponse(json.dumps({"records": records}),content_type="application/json")
+
+
+def GetProvinceDaily(request):
+    """
+    获取各省的日统计
+    :param request:
+    :return:
+    """
+    date = []
+    confirmed = []
+    dead = []
+    code = request.GET.get('provinceCode')
+    querySet = models.Province.objects.filter(provinceCode=code)
+    for item in querySet.values():
+        dailyData = json.loads(item['dailyData'])
+        for d in dailyData:
+            date.append(d['dateId'])
+            confirmed.append(d['confirmedCount'])
+            dead.append(d['deadCount'])
+    return HttpResponse(json.dumps({"date":date, "confirmed": confirmed,"dead":dead}), content_type="application/json")
+
+
+def GetNowProvince(request):
+    """
+    获取各省的新增
+    :param request:
+    :return:
+    """
+    session = requests.session()
+    session.trust_env = False
+    re = session.get("https://api.inews.qq.com/newsqa/v1/query/inner/publish/modules/list?modules=chinaDayList,chinaDayAddList,nowConfirmStatis,provinceCompare")
+    response = json.loads(re.text).get('data').get('provinceCompare')
+    return HttpResponse(json.dumps({"provinceCompare": response}),content_type="application/json")
+
+
+def GetEveryProvince(request):
+    """
+    获取各省市的数据
+    :param request:
+    :return:
+    """
+    session = requests.session()
+    session.trust_env = False
+    re = session.get("https://jz-forecast.oss-cn-beijing.aliyuncs.com/data/by_area.json")
+    response = json.loads(re.text)
+    return HttpResponse(json.dumps({"provinces": response}), content_type='application/json')
