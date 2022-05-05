@@ -10,7 +10,6 @@ import json
 import datetime
 from . import models
 
-
 PROVINCE_CODES = {
     "黑龙江": "HLJ",
     "香港": "XG",
@@ -95,7 +94,7 @@ def CumulateInfo(request):
     curedCount = models.Province.objects.filter(countryCode='CHN').aggregate(total=Sum("curedCount"))['total']
     deadCount = models.Province.objects.filter(countryCode='CHN').aggregate(total=Sum("deadCount"))['total']
     response = {"confirmedCount": confirmedCount, "curedCount": curedCount, "deadCount": deadCount}
-    return HttpResponse(json.dumps(response),content_type='application/json')
+    return HttpResponse(json.dumps(response), content_type='application/json')
 
 
 def GetChinaCumulateConfirmed(request):
@@ -115,7 +114,7 @@ def GetChinaCumulateConfirmed(request):
                 dailyData = dailyData[-30:]
                 for date in dailyData:
                     # 日期
-                    d = datetime.datetime.strptime(str(date['dateId']),'%Y%m%d').date().strftime('%Y-%m-%d')
+                    d = datetime.datetime.strptime(str(date['dateId']), '%Y%m%d').date().strftime('%Y-%m-%d')
                     # 累计确诊
                     if d in confirmed.keys():
                         confirmed[d] = confirmed[d] + date['confirmedCount']
@@ -132,7 +131,9 @@ def GetChinaCumulateConfirmed(request):
                     else:
                         dead[d] = date['deadCount']
 
-    return HttpResponse(json.dumps({"date":list(confirmed.keys()),"confirmed":list(confirmed.values()),"cured":list(cured.values()),"dead": list(dead.values())}), content_type='application/json')
+    return HttpResponse(json.dumps(
+        {"date": list(confirmed.keys()), "confirmed": list(confirmed.values()), "cured": list(cured.values()),
+         "dead": list(dead.values())}), content_type='application/json')
 
 
 def GetProvinceDayList(request):
@@ -181,7 +182,9 @@ def GetYourCountryCovidInfo(request):
         dailyData = json.loads(item['dailyData'])[-1]
         provinceConfirmed = item['confirmedCount']
         provinceDead = item['deadCount']
-    return HttpResponse(json.dumps({"dailyData":dailyData,"provinceConfirmed":provinceConfirmed,"provinceDead":provinceDead}),content_type='application/json')
+    return HttpResponse(
+        json.dumps({"dailyData": dailyData, "provinceConfirmed": provinceConfirmed, "provinceDead": provinceDead}),
+        content_type='application/json')
 
 
 def GetChinaCountry(request):
@@ -197,7 +200,7 @@ def GetChinaCountry(request):
     session.trust_env = False
     re = session.get("https://jz-forecast.oss-cn-beijing.aliyuncs.com/data/by_overall.json")
     records = json.loads(re.text)[0].get('records')
-    return HttpResponse(json.dumps({"records": records}),content_type="application/json")
+    return HttpResponse(json.dumps({"records": records}), content_type="application/json")
 
 
 def GetProvinceDaily(request):
@@ -210,14 +213,15 @@ def GetProvinceDaily(request):
     confirmed = []
     dead = []
     code = request.GET.get('provinceCode')
-    querySet = models.Province.objects.filter(provinceCode=code)
+    querySet = models.Province.objects.filter(provinceCode=code, countryCode='CHN')
     for item in querySet.values():
         dailyData = json.loads(item['dailyData'])
         for d in dailyData:
             date.append(d['dateId'])
             confirmed.append(d['confirmedCount'])
             dead.append(d['deadCount'])
-    return HttpResponse(json.dumps({"date":date, "confirmed": confirmed,"dead":dead}), content_type="application/json")
+    return HttpResponse(json.dumps({"date": date, "confirmed": confirmed, "dead": dead}),
+                        content_type="application/json")
 
 
 def GetNowProvince(request):
@@ -228,9 +232,10 @@ def GetNowProvince(request):
     """
     session = requests.session()
     session.trust_env = False
-    re = session.get("https://api.inews.qq.com/newsqa/v1/query/inner/publish/modules/list?modules=chinaDayList,chinaDayAddList,nowConfirmStatis,provinceCompare")
+    re = session.get(
+        "https://api.inews.qq.com/newsqa/v1/query/inner/publish/modules/list?modules=chinaDayList,chinaDayAddList,nowConfirmStatis,provinceCompare")
     response = json.loads(re.text).get('data').get('provinceCompare')
-    return HttpResponse(json.dumps({"provinceCompare": response}),content_type="application/json")
+    return HttpResponse(json.dumps({"provinceCompare": response}), content_type="application/json")
 
 
 def GetEveryProvince(request):
@@ -244,3 +249,36 @@ def GetEveryProvince(request):
     re = session.get("https://jz-forecast.oss-cn-beijing.aliyuncs.com/data/by_area.json")
     response = json.loads(re.text)
     return HttpResponse(json.dumps({"provinces": response}), content_type='application/json')
+
+
+def GetWarningArea(request):
+    """
+    获取风险地区
+    :param request:
+    :return:
+    """
+    session = requests.session()
+    session.trust_env = False
+    re = session.post("https://bmfw.www.gov.cn/bjww/interface/interfaceJson", data={'appId': 'NcApplication',
+                                                                                    'key': '3C502C97ABDA40D0A60FBEE50FAAD1DA',
+                                                                                    'nonceHeader': '123456789abcdefg',
+                                                                                    'paasHeader': 'zdww',
+                                                                                    'signatureHeader': 'F0CFD41BDB48CD5520337BAA0B7B9625A7A97204E53755D8B78138C330A802EB',
+                                                                                    'timestampHeader': '1651731096'})
+    print(re.text)
+
+    return HttpResponse({}, content_type='application/json')
+
+
+def GetProvinceIncr(request):
+    """
+    各省现存病例数
+    :return:
+    """
+    response = {}
+    for code in PROVINCE_RESPONSE.keys():
+        querySet = models.Province.objects.filter(provinceCode=code,countryCode='CHN')
+        for item in querySet.values():
+            dailyData = json.loads(item['dailyData'])[-1]
+            response[item['provinceName']] = dailyData['currentConfirmedCount']
+    return HttpResponse(json.dumps({"name":list(response.keys()),"value": list(response.values())}), content_type="application/json")

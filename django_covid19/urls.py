@@ -38,5 +38,7 @@ urlpatterns = [
     url(r'charts/china/all', charts.GetChinaCountry),
     url(r'charts/china/province/$',charts.GetProvinceDaily),
     url(r'charts/china/province/compare', charts.GetNowProvince),
-    url(r'charts/china/province/all', charts.GetEveryProvince)
+    url(r'charts/china/province/all', charts.GetEveryProvince),
+    url(r'charts/china/warn/area', charts.GetWarningArea),
+    url(r'charts/china/province/current', charts.GetProvinceIncr)
 ]
